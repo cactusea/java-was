@@ -1,6 +1,7 @@
 package com.cactus.was.util;
 
 import com.cactus.was.config.Configuration;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
@@ -15,14 +16,14 @@ public class Loader {
 
     private static Logger logger = LoggerFactory.getLogger(Loader.class);
     private static Configuration config;
-    private static int port;
 
     /**
      * Context ClassLoader
      */
     public static Configuration load(){
-        System.out.println("Loader - load start");
+        logger.debug("============================");
         logger.debug("server config load start");
+        logger.debug("============================");
 
         ClassLoader loader = Thread.currentThread().getContextClassLoader();
         URL url = loader.getResource("application.json");
@@ -40,13 +41,17 @@ public class Loader {
 
             JSONParser parser = new JSONParser();
             JSONObject appJson = (JSONObject) parser.parse(sb.toString());
+            ObjectMapper objectMapper = new ObjectMapper();
 
             int port = (int)(long)appJson.get("port");
             List<Configuration.Servers> serverInfo = (List<Configuration.Servers>) appJson.get("servers");
 
-            System.out.println("load end");
-            System.out.println("new configuration cons call");
-            config = new Configuration(port, serverInfo);
+            // Deserialization into the `Employee` class
+//            Employee employee = objectMapper.readValue(json, Employee.class);
+
+            Configuration config = objectMapper.readValue(appJson.toString(), Configuration.class);
+            System.out.println(config);
+//            config = new Configuration(port, serverInfo);
             return config;
 
         } catch (FileNotFoundException e){
