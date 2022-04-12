@@ -1,43 +1,38 @@
 package com.cactus.was.config;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class Configuration {
 
     int port;
     List<Servers> servers;
+    String[] forbidden_type; //보안 규칙이 추가될 수 있으므로 배열로 구현
+    Map<String, String> mapper = new HashMap<>();
 
-    public Configuration (int port, List<Servers> servers){
-        System.out.println("Configuration constructor");
-        this.port = port;
-        this.servers = servers;
+    public Configuration(){
+
     }
 
-    public class Servers{
-        String serverName;
-        String httpRoot;
-        String[] forbidden_type; //보안 규칙이 추가될 수 있으므로 배열로 구현
-        String pageIndex;
+    public static class Servers{
+        String server_name;
+        String http_root;
+        String page_index;
         String page403;
         String page404;
         String page500;
 
-        String memo; //todo 임시변수임
-
-        public String getServerName() {
-            return serverName;
+        public String getServer_name() {
+            return server_name;
         }
 
-        public String getHttpRoot() {
-            return httpRoot;
+        public String getHttp_root() {
+            return http_root;
         }
 
-        public String[] getForbidden_type() {
-            return forbidden_type;
-        }
-
-        public String getPageIndex() {
-            return pageIndex;
+        public String getPage_index() {
+            return page_index;
         }
 
         public String getPage403() {
@@ -69,5 +64,19 @@ public class Configuration {
         this.servers = servers;
     }
 
+    public String[] getForbidden_type() {
+        return forbidden_type;
+    }
 
+    public void setForbidden_type(String[] forbidden_type) {
+        this.forbidden_type = forbidden_type;
+    }
+
+    public Map<String, String> getMapper() {
+        return mapper;
+    }
+
+    public void setMapper(Map<String, String> mapper) {
+        this.mapper = mapper;
+    }
 }

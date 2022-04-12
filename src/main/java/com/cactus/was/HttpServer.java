@@ -1,9 +1,12 @@
 package com.cactus.was;
 
-import com.cactus.was.config.ServerSetting;
+import com.cactus.was.config.Configuration;
+//import com.cactus.was.config.ServerSetting;
+import com.cactus.was.util.ConfigLoader;
 import com.cactus.was.util.RequestProcessor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import sun.security.krb5.Config;
 
 import java.io.*;
 import java.net.ServerSocket;
@@ -27,12 +30,13 @@ public class HttpServer {
      * @throws IOException
      */
     public void start() throws IOException {
-        logger.info("server start");
-        logger.info("run~!");
+        logger.debug("================================");
+        logger.debug("  web application server start  ");
+        logger.debug("================================");
 
         ExecutorService pool = Executors.newFixedThreadPool(NUM_THREADS);
         try (ServerSocket server = new ServerSocket(port)) {
-            logger.info("Accepting connections on port " + server.getLocalPort());
+            logger.info("Accepting connections on port :: {}", server.getLocalPort());
             while (true) {
                 try {
                     Socket request = server.accept();
@@ -48,11 +52,8 @@ public class HttpServer {
 
     public static void main(String[] args) {
 
-        logger.info("hello was main");
-
-        //todo 흠 생성자 가져오는 것도 그렇고 뭔가 복잡해서 별로인데.. 리팩터링
-        ServerSetting s = ServerSetting.getInstance();
-        int port = s.getPort();
+        Configuration config = ConfigLoader.load();
+        int port = config.getPort();
 
         //port정보로 server start
         try {

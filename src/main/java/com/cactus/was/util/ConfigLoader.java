@@ -12,18 +12,16 @@ import java.io.*;
 import java.net.URL;
 import java.util.List;
 
-public class Loader {
+public class ConfigLoader {
 
-    private static Logger logger = LoggerFactory.getLogger(Loader.class);
+    private static Logger logger = LoggerFactory.getLogger(ConfigLoader.class);
     private static Configuration config;
 
     /**
      * Context ClassLoader
      */
     public static Configuration load(){
-        logger.debug("============================");
-        logger.debug("server config load start");
-        logger.debug("============================");
+        logger.debug("server config load");
 
         ClassLoader loader = Thread.currentThread().getContextClassLoader();
         URL url = loader.getResource("application.json");
@@ -43,15 +41,7 @@ public class Loader {
             JSONObject appJson = (JSONObject) parser.parse(sb.toString());
             ObjectMapper objectMapper = new ObjectMapper();
 
-            int port = (int)(long)appJson.get("port");
-            List<Configuration.Servers> serverInfo = (List<Configuration.Servers>) appJson.get("servers");
-
-            // Deserialization into the `Employee` class
-//            Employee employee = objectMapper.readValue(json, Employee.class);
-
             Configuration config = objectMapper.readValue(appJson.toString(), Configuration.class);
-            System.out.println(config);
-//            config = new Configuration(port, serverInfo);
             return config;
 
         } catch (FileNotFoundException e){
