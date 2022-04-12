@@ -6,6 +6,8 @@ import org.slf4j.LoggerFactory;
 import java.io.*;
 import java.net.URLConnection;
 import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -22,10 +24,16 @@ public class HttpRequest {
 
     private static Logger logger = LoggerFactory.getLogger(HttpRequest.class);
 
+//    private Header header;
     private InputStream ins;
-    private String fileName;
-    private String parameter;
-//    private String pathInfo;
+    private String fileName; //todo 아 이거 목적지 파일 이름이었어^^;;; 헷가렬서 이름 바꿔야겠
+    private String requestURL; //http://localhost/Project/project.jsp
+    private String requestURI; ///Project/project.jsp
+    private String remoteHost; //127.0.0.1
+    private String sererName;  //localhost
+    private int serverPort;    //8000
+
+    private Map<String, String> params = new HashMap<>();
 
     public HttpRequest(InputStream ins) {
         this.ins = ins;
@@ -42,11 +50,17 @@ public class HttpRequest {
 
             String get = requestLine.toString();
             String[] getArr = get.split("\r\n");
+            //todo 변수명....
+            Header h = new Header(getArr);
+            setParameter(h.getParams());
 
-            //흠...헤더 토큰인데....
-            String[] tokens = getArr[0].split("\\s+");
-            String fileName = tokens[1];
-            setFileName(fileName); //todo 흠 전역 쓰는것보다 세터쓰는게 훨날듯..
+            //filename 리턴해주는 방법
+            //현재 host 정보를 가져온다
+            //application.json에서 host값에 매핑된 목적지파일 주소를 가져온다
+            //그걸 리턴해준다
+
+            //todo ....request에 있어야 할 것과 header에 있어야 할 것의 차이는 뭘까...
+            // 어떻게 분리해야할까....????????
 
         } catch (UnsupportedEncodingException e) {
             e.printStackTrace();
@@ -63,7 +77,15 @@ public class HttpRequest {
         this.fileName = fileName;
     }
 
-    public String getParameter(String parameter) {
-       return parameter;
+    public String getParameter(String name) {
+        if(this.params.size()>0){
+
+        }
+        String param = this.params.get(name);
+        return param;
+    }
+
+    public void setParameter(Map<String, String> params) {
+        this.params = params;
     }
 }

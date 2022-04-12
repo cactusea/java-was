@@ -58,13 +58,10 @@ public class HttpServer {
     public static void main(String[] args) {
 
         logger.info("hello was main");
-        System.out.println("main go");
 
         //todo 흠 생성자 가져오는 것도 그렇고 뭔가 복잡해서 별로인데.. 리팩터링
         ServerSetting s = ServerSetting.getInstance();
         int port = s.getPort();
-        System.out.println("ss...:"+ s.getPort());
-
 
         //port정보로 server start
         try {
