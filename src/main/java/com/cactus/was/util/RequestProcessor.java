@@ -5,6 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
+import java.lang.reflect.Method;
 import java.net.Socket;
 import java.net.URL;
 import java.net.URLConnection;
@@ -80,13 +81,10 @@ public class RequestProcessor implements Runnable {
 
             if (theFile.canRead()) {
                 byte[] theData = Files.readAllBytes(theFile.toPath());
-//                if (version.startsWith("HTTP/")) { // send a MIME header
-//                    sendHeader(writer, "HTTP/1.0 200 OK", contentType, theData.length);
-//                }
                 // send the file; it may be an image or other binary data
                 // so use the underlying output stream
                 // instead of the writer
-                //todo 흠 헤더...
+                //todo 흠 헤더... 헤더를 어떻게 보낼까
                 sendHeader(out, "HTTP/1.0 200 OK", contentType, theData.length);
 
                 ous.write(theData);
@@ -105,6 +103,42 @@ public class RequestProcessor implements Runnable {
         }
     }
 
+    protected void doAction() { // (HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        String[] path = "req.getPathInfo()".split("/"); //todo request path
+
+        if( path.length <= 1 ) {
+            //resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
+            //return;
+        }
+
+        Class<?> servletClass = null;
+        Method method = null; //무순메소드?
+
+        try {
+            servletClass = Class.forName("");
+//            servletClass = Class.forName(controllerPackage + "." + WordUtils.capitalize(path[1]) );
+//            method = servletClass.getMethod(path[2], new Class[] {HttpServletRequest.class, HttpServletResponse.class});
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+//        } catch (NoSuchMethodException e) {
+//            e.printStackTrace();
+        } catch (SecurityException e) {
+            e.printStackTrace();
+        }
+
+        Object simpleServlet = null; //todo controller가 없으니까.. 변수명 변경
+
+        try {
+            simpleServlet = servletClass.newInstance();
+            method.invoke(simpleServlet, req, res);
+            //혹은
+            //simpleServlet.service(req, res) 이렇게 직접 호출해도 되는듯?
+            //확장성을 고려하면 method.invoke가 안정적일듯..?
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+    }
 
     private void sendHeader(Writer out, String responseCode, String contentType, int length)
             throws IOException {
@@ -115,60 +149,6 @@ public class RequestProcessor implements Runnable {
         out.write("Content-length: " + length + "\r\n");
         out.write("Content-type: " + contentType + "\r\n\r\n");
         out.flush();
-    }
-
-
-    /**
-     * ㅠㅠ
-     */
-    public void run_o() {
-        System.out.println("request processor run");
-
-        try {
-            ous = connection.getOutputStream();
-            ins = connection.getInputStream();
-
-            //httpreq, res 클라이언트 생성
-            req = new HttpRequest(ins);
-            res = new HttpResponse(ous);
-
-            // 파일읽어오기
-            ClassLoader loader = Thread.currentThread().getContextClassLoader();
-            URL url = loader.getResource("static/was1/index.html"); //todo 대상 파일 적용.. 여기서 라우팅을??
-            String path = url.getPath();
-            File theFile = new File(path);
-
-            if(theFile.canRead()){
-//                byte[] theData = Files.readAllBytes(theFile.toPath());
-                //todo send header
-//                response.getWriter().flush();
-//                response.send(data);
-
-                String body = new StringBuilder("<HTML>\r\n")
-                        .append("<HEAD><TITLE>Index</TITLE>\r\n")
-                        .append("</HEAD>\r\n")
-                        .append("<BODY>")
-                        .append("<H1>HTTP test..</H1>\r\n")
-                        .append("</BODY></HTML>\r\n")
-                        .toString();
-
-                res.getWriter().write(body);
-                res.getWriter().flush();
-//                res.write(body);
-            }else{
-                //404
-            }
-        } catch (IOException ex) {
-            logger.warn("Error talking to :: {}", connection.getRemoteSocketAddress(), ex);
-        } catch(Exception e){
-            e.printStackTrace();
-        } finally {
-            try {
-                connection.close();
-            } catch (IOException e) {
-                logger.error("Connection close exception :: {}", e);
-            }
-        }
     }
 
 }
