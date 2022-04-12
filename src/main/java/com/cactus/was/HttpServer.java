@@ -1,22 +1,13 @@
 package com.cactus.was;
 
-import com.cactus.was.config.Configuration;
 import com.cactus.was.config.ServerSetting;
-import com.cactus.was.util.Loader;
 import com.cactus.was.util.RequestProcessor;
-import org.json.JSONObject;
-import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
-import java.util.List;
-import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 

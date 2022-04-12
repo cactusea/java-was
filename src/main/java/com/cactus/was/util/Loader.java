@@ -1,8 +1,6 @@
 package com.cactus.was.util;
 
-import com.cactus.was.HttpServer;
 import com.cactus.was.config.Configuration;
-//import org.json.JSONObject;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
@@ -11,9 +9,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.net.URL;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
-import java.util.Map;
 
 public class Loader {
 
