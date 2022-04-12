@@ -1,0 +1,27 @@
+{
+  "port": 8000,
+  "servers": [
+    {
+      "name": "www.was1.com",
+      "http_root": "/WEB-INF/was1",
+      "memo": "나중에 servletContext.getResourceAsStream(\"/WEB-INF/myfile\"); 이렇게..",
+      "index": "/index.html",
+      "403": "/403.html",
+      "404": "/404.html",
+      "500": "/500.html"
+    },
+    {
+      "name": "www.was2.com",
+      "http_root": "/WEB-INF/was2",
+      "index": "/index.html",
+      "403": "/403.html",
+      "404": "/404.html",
+      "500": "/500.html"
+    }
+  ],
+  "forbidden_type": [
+      "exe",
+      "sh",
+      "/.."
+    ]
+}
