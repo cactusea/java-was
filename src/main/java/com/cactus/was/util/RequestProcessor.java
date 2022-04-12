@@ -129,7 +129,8 @@ public class RequestProcessor implements Runnable {
         Object simpleServlet = null; //todo controller가 없으니까.. 변수명 변경
 
         try {
-            simpleServlet = servletClass.newInstance();
+            simpleServlet = servletClass.newInstance(); //todo jdk9 newinstance deprecated
+            servletClass.getDeclaredConstructor().newInstance();  // replace?
             method.invoke(simpleServlet, req, res);
             //혹은
             //simpleServlet.service(req, res) 이렇게 직접 호출해도 되는듯?
