@@ -61,15 +61,22 @@ public class RequestProcessor implements Runnable {
             req.setting();
 
             String fileName = req.getFileName();
+            //todo fileName, http_root경로로 해서 contentTYPE 헤더로 보내기
+
+            if(fileName==null){
+                //todo 404 exception 처리
+            }else{
+
+            }
             String contentType = URLConnection.getFileNameMap().getContentTypeFor(fileName);
 
             // 파일읽어오기
             ClassLoader loader = Thread.currentThread().getContextClassLoader();
-            URL url = loader.getResource("static/was1/index.html"); //todo 대상 파일 적용.. 라우팅 결과물을 가져와서 넣어야한다.
+            URL url = loader.getResource("template/was1/index.html"); //todo 대상 파일 적용.. 라우팅 결과물을 가져와서 넣어야한다.
 
             if(url==null){
-                url = loader.getResource("static/was1/404.html");
-                //throw exception?
+                url = loader.getResource("template/was1/404.html");
+                //todo throw exception?
             }
 
             String path = url.getPath();
@@ -91,7 +98,9 @@ public class RequestProcessor implements Runnable {
 
         } catch (IOException ex) {
             logger.warn("Error talking to " + connection.getRemoteSocketAddress(), ex);
-        } finally {
+        } catch(Exception e){
+            logger.error("server run --> fail :: {}", e);
+        }finally {
             try {
                 connection.close();
             } catch (IOException ex) {

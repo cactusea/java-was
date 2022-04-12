@@ -14,8 +14,8 @@ public class Configuration {
     }
 
     public class Servers{
-        String name;
-        String http_root;
+        String serverName;
+        String httpRoot;
         String[] forbidden_type; //보안 규칙이 추가될 수 있으므로 배열로 구현
         String pageIndex;
         String page403;
@@ -24,12 +24,12 @@ public class Configuration {
 
         String memo; //todo 임시변수임
 
-        public String getName() {
-            return name;
+        public String getServerName() {
+            return serverName;
         }
 
-        public String getHttp_root() {
-            return http_root;
+        public String getHttpRoot() {
+            return httpRoot;
         }
 
         public String[] getForbidden_type() {

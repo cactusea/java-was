@@ -3,10 +3,7 @@ package com.cactus.was.util;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.net.URLConnection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -20,18 +17,36 @@ public class Header {
 
     private static Logger logger = LoggerFactory.getLogger(Header.class);
 
-    private String Host;
+    private String host;
     private String method;
     private String version;
+    private String reqUrl;
+    private String contentType;
     private Map<String, String> params = new HashMap<>();
-    private List<String> AcceptEncoding;
 
     public Header(String[] h){
+        //요청의 첫줄은 Request 정보이므로 배열의 0번으로 고정
         String[] tokens = h[0].split("\\s+"); //공백자르기
         String method = tokens[0];
-        String host = h[1].split(":")[1]; //ex localhost:8000 -> localhost
-        String contentType = URLConnection.getFileNameMap().getContentTypeFor("static/was1/index.html");
+        String reqUrl = tokens[1];
         String version = tokens[2];
+
+        String host = Arrays.stream(h).filter(k->k.indexOf("Host:")>-1).findFirst().orElse("");
+        //todo 흠 여기서 orelse에 걸렸으면 어떻게처리를 할까...???
+        //host는 필수지만 만일의 경우를 대비g..
+        if(host.length()>1){
+            host = host.split(":")[1];
+        }
+
+        //fileName
+        //루트면 http_root + index로 하고
+        //아니면?? -> http_root+추가부분으로 .. ?
+
+
+        //..처리를 어디서 하는게 깔끔할까???????
+
+        //todo response header에 들어가는 내용임 ..
+//        String contentType = URLConnection.getFileNameMap().getContentTypeFor("template/was1/index.html");
 
         // QueryString to parameter(map)
         if(tokens[1].contains("?")){ //localhost:8080?name=cactus&age=3
@@ -41,25 +56,24 @@ public class Header {
                     .map(s->s.split("="))
                     .collect(Collectors.toMap(k->k[0], v->v[1]));
 
-//            params = paramMap;
             setParams(paramMap);
         }
 
+        //setter
         setMethod(method);
         setHost(host);
-
-        if (tokens.length > 2) {
-            setVersion(tokens[2]); //HTTP/1.1
-        }
+        setReqUrl(reqUrl);
+        setVersion(version);
+        setContentType(contentType);
 
     }
 
     public String getHost() {
-        return Host;
+        return host;
     }
 
     public void setHost(String host) {
-        Host = host;
+        this.host = host;
     }
 
     public String getMethod() {
@@ -78,6 +92,22 @@ public class Header {
         this.version = version;
     }
 
+    public String getReqUrl() {
+        return reqUrl;
+    }
+
+    public void setReqUrl(String reqUrl) {
+        this.reqUrl = reqUrl;
+    }
+
+    public String getContentType() {
+        return contentType;
+    }
+
+    public void setContentType(String contentType) {
+        this.contentType = contentType;
+    }
+
     public Map<String, String> getParams() {
         return params;
     }
@@ -86,11 +116,4 @@ public class Header {
         this.params = params;
     }
 
-    public List<String> getAcceptEncoding() {
-        return AcceptEncoding;
-    }
-
-    public void setAcceptEncoding(List<String> acceptEncoding) {
-        AcceptEncoding = acceptEncoding;
-    }
 }

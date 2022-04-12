@@ -1,5 +1,7 @@
 package com.cactus.was.util;
 
+import com.cactus.was.config.Configuration;
+import com.cactus.was.config.ServerSetting;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,6 +42,7 @@ public class HttpRequest {
         try{
             BufferedReader re = new BufferedReader(new InputStreamReader(new BufferedInputStream(this.ins), "UTF-8"));
             StringBuilder requestLine = new StringBuilder();
+            ServerSetting ss = ServerSetting.getInstance();
 
             while(re.ready()){
                 requestLine.append(re.readLine()).append("\r\n");
@@ -53,11 +56,23 @@ public class HttpRequest {
 
             //filename 리턴해주는 방법
             //현재 host 정보를 가져온다
-            //application.json에서 host값에 매핑된 목적지파일 주소를 가져온다
-            //그걸 리턴해준다
+            String host = h.getHost(); //www.was1.com
+            String dest = h.getReqUrl(); //hello
 
-            //todo ....request에 있어야 할 것과 header에 있어야 할 것의 차이는 뭘까...
-            // 어떻게 분리해야할까....????????
+            String rhost = "";
+            //application.json에서 host값에 매핑된 목적지파일 주소를 가져온다
+            for(Configuration.Servers server : ss.getServers()){
+                if(server.getServerName().equals(host)){
+                    rhost = server.getHttpRoot();
+
+                    //요ㅛ청주소를...... 를...
+                    //요청이 파일이 아니면어떻게함?! 그래도 파일인건가?!?!
+                    //아니지 키워드에 매핑된 디렉토리 경로가 있으니까 그 클래스를 파일로 하면.. ??
+                }
+            }
+
+
+
 
         } catch (UnsupportedEncodingException e) {
             e.printStackTrace();
