@@ -1,5 +1,6 @@
 package com.cactus.was.util;
 
+import com.cactus.was.config.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,25 +29,6 @@ public class RequestProcessor implements Runnable {
     }
 
     /**
-     * inputstream, outputstream setting
-     * req, res setting
-     */
-    public void init(){
-        try {
-            ins = connection.getInputStream();
-            ous = connection.getOutputStream();
-            req = new HttpRequest(ins);
-            res = new HttpResponse(ous);
-
-            OutputStream raw = new BufferedOutputStream(connection.getOutputStream());
-            Writer out = new OutputStreamWriter(raw);
-            this.out = out;
-        }catch (IOException e){
-            e.printStackTrace();
-        }
-    }
-
-    /**
      * 1. server setting 정보 가져오기
      * 2. 요청 도메인 확인 (ex. GET /asdf HTTP/1.1
      * 3. 요청 분석하여 403 처리  (forbidden_type)
@@ -57,27 +39,37 @@ public class RequestProcessor implements Runnable {
     @Override
     public void run(){
         try {
-            init();
-            req.setting();
+            ins = connection.getInputStream();
+            ous = connection.getOutputStream();
+            OutputStream raw = new BufferedOutputStream(ous);
+            Writer out = new OutputStreamWriter(raw);
 
+            req = new HttpRequest(ins);
+//            res = new HttpResponse(ous);
+
+            req.setting();
             String fileName = req.getFileName();
-            //todo fileName, http_root경로로 해서 contentTYPE 헤더로 보내기
+            logger.debug(req.getRhost());
+            logger.debug(req.getRdest());
 
             if(fileName==null){
                 //todo 404 exception 처리
-            }else{
-
+                throw new FileNotFoundException();
+            }else if("403".equals(fileName)){ //todo 임시처리~~
+                //todo 403 forbidden
+//                throw new ErrorHandler("403 Forbidden");
             }
+
+            if (fileName.endsWith("/")) fileName += ""; //todo root일경우 ..default?
+            //경로처리
+            //루트 아니고 경로 파일일 경우에도 처리..
+            File file = new File(fileName);
+
             String contentType = URLConnection.getFileNameMap().getContentTypeFor(fileName);
 
             // 파일읽어오기
             ClassLoader loader = Thread.currentThread().getContextClassLoader();
-            URL url = loader.getResource("template/was1/index.html"); //todo 대상 파일 적용.. 라우팅 결과물을 가져와서 넣어야한다.
-
-            if(url==null){
-                url = loader.getResource("template/was1/404.html");
-                //todo throw exception?
-            }
+            URL url = loader.getResource("template/was1/index.html"); //todo 대상 파일 적용.. 라우팅 결과물을 가져와서 넣어야한다. ??
 
             String path = url.getPath();
             File theFile = new File(path);
@@ -93,11 +85,15 @@ public class RequestProcessor implements Runnable {
                 ous.write(theData);
                 ous.flush();
             } else {
-                logger.warn("file cannot read");
+                url = loader.getResource("template/was1/404.html");
+                logger.error("file cannot read");
             }
 
+        } catch (FileNotFoundException e){
+            logger.error("FileNotFoundException :: ", e);
+            //todo 404 리턴
         } catch (IOException ex) {
-            logger.warn("Error talking to " + connection.getRemoteSocketAddress(), ex);
+            logger.error("Error talking to " + connection.getRemoteSocketAddress(), ex);
         } catch(Exception e){
             logger.error("server run --> fail :: {}", e);
         }finally {

@@ -1,12 +1,13 @@
 package com.cactus.was.util;
 
 import com.cactus.was.config.Configuration;
-import com.cactus.was.config.ServerSetting;
+//import com.cactus.was.config.ServerSetting;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -23,55 +24,62 @@ public class HttpRequest {
 
     private static Logger logger = LoggerFactory.getLogger(HttpRequest.class);
 
-//    private Header header;
     private InputStream ins;
-    private String fileName; //todo 아 이거 목적지 파일 이름이었어^^;;; 헷가렬서 이름 바꿔야겠
-    private String requestURL; //http://localhost/Project/project.jsp
-    private String requestURI; ///Project/project.jsp
-    private String remoteHost; //127.0.0.1
-    private String sererName;  //localhost
-    private int serverPort;    //8000
+    private Header header;
+    public String fileName; //todo 아 이거 목적지 파일 이름이었어^^;;; 헷가렬서 이름 바꿔야겠
+    public Map<String, String> params = new HashMap<>();
+    public String rhost;
+    public String rdest;
 
-    private Map<String, String> params = new HashMap<>();
+//    private String requestURL; //http://localhost/Project/project.jsp
+//    private String requestURI; ///Project/project.jsp
+//    private String remoteHost; //127.0.0.1
+//    private String sererName;  //localhost
+//    private int serverPort;    //8000
 
     public HttpRequest(InputStream ins) {
         this.ins = ins;
     }
 
     public void setting(){
-        try{
-            BufferedReader re = new BufferedReader(new InputStreamReader(new BufferedInputStream(this.ins), "UTF-8"));
-            StringBuilder requestLine = new StringBuilder();
-            ServerSetting ss = ServerSetting.getInstance();
+        try(BufferedReader br = new BufferedReader(new InputStreamReader(new BufferedInputStream(this.ins), "UTF-8"))){
+            StringBuilder reqMsg = new StringBuilder();
 
-            while(re.ready()){
-                requestLine.append(re.readLine()).append("\r\n");
+            while(br.ready()){
+                reqMsg.append(br.readLine()).append("\r\n");
             }
 
-            String get = requestLine.toString();
-            String[] getArr = get.split("\r\n");
-            //todo 변수명....
-            Header h = new Header(getArr);
-            setParameter(h.getParams());
+            Configuration config = ConfigLoader.load();
+            String reqStr = reqMsg.toString();
+            String[] reqMsgHeader = reqStr.split("\r\n");
+            Header header = new Header(reqMsgHeader);
+            setParameter(header.getParams());
 
             //filename 리턴해주는 방법
             //현재 host 정보를 가져온다
-            String host = h.getHost(); //www.was1.com
-            String dest = h.getReqUrl(); //hello
+            String host = header.getHost(); //www.was1.com
+            String dest = header.getReqUrl(); //hello //todo mapper에서 매칭
+
+            // ex 1) was1.com/
+            // ex 2) was1.com/Hello
+            // ex 3) was1.com/service.Hello
+
+            //application.json에서 host값에 매핑된 목적지파일 주소를 가져온다
+            List<Configuration.Servers> serverList = config.getServers();
 
             String rhost = "";
-            //application.json에서 host값에 매핑된 목적지파일 주소를 가져온다
-            for(Configuration.Servers server : ss.getServers()){
-                if(server.getServerName().equals(host)){
-                    rhost = server.getHttpRoot();
-
-                    //요ㅛ청주소를...... 를...
-                    //요청이 파일이 아니면어떻게함?! 그래도 파일인건가?!?!
-                    //아니지 키워드에 매핑된 디렉토리 경로가 있으니까 그 클래스를 파일로 하면.. ??
+            for (Configuration.Servers server : serverList) {
+                if (server.getServer_name().equals(host)) {
+                    rhost = server.getHttp_root();
+                    break;
                 }
             }
-
-
+            Map<String, String> mapperMap = config.getMapper();
+            String rdest = mapperMap.get(dest);
+            logger.info("rhost :: {}", rhost);
+            logger.info("rdest :: {}", rdest);
+            setRdest(rdest);
+            setRhost(rhost);
 
 
         } catch (UnsupportedEncodingException e) {
@@ -79,6 +87,14 @@ public class HttpRequest {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    public Header getHeader() {
+        return header;
+    }
+
+    public void setHeader(Header header) {
+        this.header = header;
     }
 
     public String getFileName() {
@@ -99,5 +115,29 @@ public class HttpRequest {
 
     public void setParameter(Map<String, String> params) {
         this.params = params;
+    }
+
+    public Map<String, String> getParams() {
+        return params;
+    }
+
+    public void setParams(Map<String, String> params) {
+        this.params = params;
+    }
+
+    public String getRhost() {
+        return rhost;
+    }
+
+    public void setRhost(String rhost) {
+        this.rhost = rhost;
+    }
+
+    public String getRdest() {
+        return rdest;
+    }
+
+    public void setRdest(String rdest) {
+        this.rdest = rdest;
     }
 }

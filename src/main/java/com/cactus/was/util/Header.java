@@ -24,29 +24,25 @@ public class Header {
     private String contentType;
     private Map<String, String> params = new HashMap<>();
 
-    public Header(String[] h){
+    public Header(String[] reqMsgHeader){
         //요청의 첫줄은 Request 정보이므로 배열의 0번으로 고정
-        String[] tokens = h[0].split("\\s+"); //공백자르기
+        String[] tokens = reqMsgHeader[0].split("\\s+");
+        //todo .... length처리?
         String method = tokens[0];
         String reqUrl = tokens[1];
-        String version = tokens[2];
+        String version = "";
 
-        String host = Arrays.stream(h).filter(k->k.indexOf("Host:")>-1).findFirst().orElse("");
+//        String fileName = tokens[1];
+//        if (reqUrl.endsWith("/")) fileName += indexFileName;
+        if (tokens.length > 2) {
+            version = tokens[2];
+        }
+
+        String host = Arrays.stream(reqMsgHeader).filter(k->k.indexOf("Host:")>-1).findFirst().orElse("");
         //todo 흠 여기서 orelse에 걸렸으면 어떻게처리를 할까...???
-        //host는 필수지만 만일의 경우를 대비g..
         if(host.length()>1){
             host = host.split(":")[1];
         }
-
-        //fileName
-        //루트면 http_root + index로 하고
-        //아니면?? -> http_root+추가부분으로 .. ?
-
-
-        //..처리를 어디서 하는게 깔끔할까???????
-
-        //todo response header에 들어가는 내용임 ..
-//        String contentType = URLConnection.getFileNameMap().getContentTypeFor("template/was1/index.html");
 
         // QueryString to parameter(map)
         if(tokens[1].contains("?")){ //localhost:8080?name=cactus&age=3
@@ -64,7 +60,7 @@ public class Header {
         setHost(host);
         setReqUrl(reqUrl);
         setVersion(version);
-        setContentType(contentType);
+//        setContentType(contentType);
 
     }
 
