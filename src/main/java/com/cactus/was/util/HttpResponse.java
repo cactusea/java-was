@@ -47,4 +47,16 @@ public class HttpResponse {
         out.write(data);
         out.flush();
     }
+
+    public void sendHeader(String responseCode, String contentType, int length)
+            throws IOException {
+        out.write(responseCode + "\r\n");
+        Date now = new Date();
+        out.write("Date: " + now + "\r\n");
+        out.write("Server: JHTTP 2.0\r\n");
+        out.write("Content-length: " + length + "\r\n");
+        out.write("Content-type: " + contentType + "\r\n\r\n");
+        out.flush();
+    }
+
 }

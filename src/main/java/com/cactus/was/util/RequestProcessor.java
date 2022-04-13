@@ -9,19 +9,12 @@ import java.net.Socket;
 import java.net.URL;
 import java.net.URLConnection;
 import java.nio.file.Files;
-import java.util.Date;
 
 public class RequestProcessor implements Runnable {
 
     private static Logger logger = LoggerFactory.getLogger(RequestProcessor.class);
+    private final static String[] EXTENTION = {"html","txt"};
     private Socket connection;
-    private OutputStream ous;
-    private InputStream ins;
-    private Writer out;
-
-    private HttpRequest req;
-    private HttpResponse res;
-
 
     public RequestProcessor(Socket connection){
         this.connection = connection;
@@ -31,100 +24,103 @@ public class RequestProcessor implements Runnable {
      * 1. server setting 정보 가져오기
      * 2. 요청 도메인 확인 (ex. GET /asdf HTTP/1.1
      * 3. 요청 분석하여 403 처리  (forbidden_type)
-     *    1) 도메인에 .exe가 포함되어 있으면 (예시로 걍 sh도 넣어봄)
+     *    1) 도메인에 .exe가 포함되어 있으면
      *    2) root보다 상위 디렉터리에 접근할 때 (/../.. ....)
      * 4. 403, 404, 500 응답시 설정에 맞는 파일 이름 페이지 보내기 (getPage403() ..)
      */
     @Override
     public void run(){
-        try {
+        InputStream ins=null;
+        OutputStream ous=null;
+        try{
             ins = connection.getInputStream();
             ous = connection.getOutputStream();
-            OutputStream raw = new BufferedOutputStream(ous);
-            Writer out = new OutputStreamWriter(raw);
+        } catch (IOException e){
+            logger.error("connectoin steream error :: {}", e);
+        }
 
-            req = new HttpRequest(ins);
-            res = new HttpResponse(ous);
+        HttpRequest req = new HttpRequest(ins);
+        HttpResponse res = new HttpResponse(ous);
+
+        OutputStream raw = new BufferedOutputStream(ous);
+        Writer out = new OutputStreamWriter(raw);
+
+        try {
 
             req.setting();
-            //String fileName = req.getFileName();
+
+            String fileName = req.getFileName();
             String filePath = req.getFilePath();
-            logger.debug("filepath::{}",req.getFilePath());
+            logger.debug("fileName::{}, filepath::{}", fileName, filePath);
+//
+            ClassLoader loader = Thread.currentThread().getContextClassLoader();
 
-            if(filePath==null){
-                //todo 404 exception 처리
-                throw new FileNotFoundException();
-            }else if("403".equals(filePath)){ //todo 임시처리~~
-                //todo 403 forbidden
-                //throw new ErrorHandler("403 Forbidden");
+            //..todo ... 빼고싶당
+            //보안규칙에 위배되는 경우 403 반환
+            for(String ft : req.getForbiddenType()){
+                if(fileName.endsWith("."+ft) || fileName.contains(ft)){
+                    logger.info("forbidden type, access denied");
+                    String page = loader.getResource(req.getServerConfig().getHttp_root()
+                            +req.getServerConfig().getPage403()).getPath();
+                    File theFile = new File(page);
+
+                    if (theFile.canRead()) {
+                        byte[] theData = Files.readAllBytes(theFile.toPath());
+                        res.sendHeader(out, req.getHeader().getVersion()+" 403 Forbidden", "text/html", theData.length);
+                        raw.write(theData);
+                        raw.flush();
+                        throw new Exception("access denied Exception");
+                    }
+                }
             }
+            //500
+            //기타오류나..
+            //타임아웃?..
 
-            //경로처리
-            //루트 아니고 경로 파일일 경우에도 처리..
-            File file = new File(filePath);
-
-            String contentType = URLConnection.getFileNameMap().getContentTypeFor(filePath);
-
-            String path = filePath;
-            File theFile = new File(path);
-
-            if(path.endsWith("html")){
-//                page로 이동
-                //file canread로 확인 후 리턴
-
+            URL url = loader.getResource(filePath);
+            if(url!=null){
+                File theFile = new File(url.getPath());
+                if (theFile.canRead()) {
+                    byte[] theData = Files.readAllBytes(theFile.toPath());
+                    String contentType = URLConnection.getFileNameMap().getContentTypeFor(url.getPath());
+                    res.sendHeader(out, req.getHeader().getVersion()+" 200 OK", contentType, theData.length);
+                    raw.write(theData);
+                    raw.flush();
+                }
             } else {
-                doAction();
+                //classloader에서 file resource를 읽지 못하는 경우 클래스 요청으로 간주함
+                doAction(req, res);
             }
 
-            if (theFile.canRead()) {
-                byte[] theData = Files.readAllBytes(theFile.toPath());
-                // send the file; it may be an image or other binary data
-                // so use the underlying output stream
-                // instead of the writer
-                //todo 흠 헤더... 헤더를 어떻게 보낼까
-                //이거 flush에ㅔ서 소켓익셉션이..
-//                sendHeader(out, "HTTP/1.0 200 OK", contentType, theData.length);
-
-                ous.write(theData);
-                ous.flush();
-            } else {
-//                logger.info(filePath);
-
-//                url = loader.getResource("template/was1/404.html");
-//                logger.error("file cannot read");
-            }
 
         } catch (FileNotFoundException e){
-            logger.error("FileNotFoundException :: ", e);
-            //todo 404 리턴
+            logger.error("FileNotFoundException");
+            e.printStackTrace();
+            //.....으으으음........ loader때문에......으으으으믐ㅇㄴ름ㄴㅇ루ㅡ
         } catch (IOException ex) {
             logger.error("Error talking to " + connection.getRemoteSocketAddress(), ex);
         } catch(Exception e){
-            logger.error("server run --> fail :: {}", e);
+            logger.error("server Exception");
+            e.printStackTrace();
         }finally {
             try {
                 connection.close();
             } catch (IOException ex) {
+                logger.error("finally IOException");
+                ex.printStackTrace();
             }
         }
     }
 
-    protected void doAction() { // (HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        String[] path = "req.getPathInfo()".split("/"); //todo request path
-
-        if( path.length <= 1 ) {
-            //resp.sendError(HttpServletResponse.SC_BAD_REQUEST);
-            //return;
-        }
-
+    protected void doAction(HttpRequest req, HttpResponse res) {
         Class<?> servletClass = null;
-        Method method = null; //무순메소드?
+        Method method = null;
 
         try {
+            //todo package ...
             servletClass = Class.forName("com.cactus.was."+"Hello");
+//            servletClass = Class.forName("com.cactus.was.service."+"Hello");
             method = servletClass.getMethod("service", new Class[] {HttpRequest.class, HttpResponse.class} );
-//            servletClass = Class.forName(controllerPackage + "." + WordUtils.capitalize(path[1]) );
-//            method = servletClass.getMethod(path[2], new Class[] {HttpServletRequest.class, HttpServletResponse.class});
         } catch (ClassNotFoundException e) {
             e.printStackTrace();
         } catch (NoSuchMethodException e) {
@@ -133,28 +129,19 @@ public class RequestProcessor implements Runnable {
             e.printStackTrace();
         }
 
-        Object simpleServlet = null; //todo controller가 없으니까.. 변수명 변경
+        Object simpleServlet = null;
 
         try {
-            simpleServlet = servletClass.newInstance(); //todo jdk9 newinstance deprecated
-//            servletClass.getDeclaredConstructor().newInstance();  // replace?
+//            simpleServlet = servletClass.newInstance(); //todo jdk9 newinstance deprecated
+            simpleServlet = servletClass.getDeclaredConstructor().newInstance();  // replace
             method.invoke(simpleServlet, req, res);
-
+            res.sendHeader(req.getHeader().getVersion()+" 200 OK", "text/html", 0);
+            //...?todo 왜 에러가...
         } catch (Exception e) {
             e.printStackTrace();
         }
 
     }
 
-    private void sendHeader(Writer out, String responseCode, String contentType, int length)
-            throws IOException {
-        out.write(responseCode + "\r\n");
-        Date now = new Date();
-        out.write("Date: " + now + "\r\n");
-        out.write("Server: JHTTP 2.0\r\n");
-        out.write("Content-length: " + length + "\r\n");
-        out.write("Content-type: " + contentType + "\r\n\r\n");
-        out.flush();
-    }
 
 }
