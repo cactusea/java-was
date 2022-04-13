@@ -27,21 +27,18 @@ public class Header {
     public Header(String[] reqMsgHeader){
         //요청의 첫줄은 Request 정보이므로 배열의 0번으로 고정
         String[] tokens = reqMsgHeader[0].split("\\s+");
-        //todo .... length처리?
         String method = tokens[0];
         String reqUrl = tokens[1];
         String version = "";
 
-//        String fileName = tokens[1];
-//        if (reqUrl.endsWith("/")) fileName += indexFileName;
         if (tokens.length > 2) {
             version = tokens[2];
         }
 
         String host = Arrays.stream(reqMsgHeader).filter(k->k.indexOf("Host:")>-1).findFirst().orElse("");
-        //todo 흠 여기서 orelse에 걸렸으면 어떻게처리를 할까...???
+
         if(host.length()>1){
-            host = host.split(":")[1];
+            host = host.split(":")[1].trim();
         }
 
         // QueryString to parameter(map)
@@ -60,7 +57,6 @@ public class Header {
         setHost(host);
         setReqUrl(reqUrl);
         setVersion(version);
-//        setContentType(contentType);
 
     }
 

@@ -27,7 +27,7 @@ public class HttpResponse {
      * @param length
      * @throws IOException
      */
-    private void sendHeader(Writer out, String responseCode, String contentType, int length)
+    public void sendHeader(Writer out, String responseCode, String contentType, int length)
             throws IOException {
         out.write(responseCode + "\r\n");
         Date now = new Date();
