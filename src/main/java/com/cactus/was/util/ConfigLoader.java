@@ -25,8 +25,6 @@ public class ConfigLoader {
 
         ClassLoader loader = Thread.currentThread().getContextClassLoader();
         URL url = loader.getResource("application.json");
-        //todo const로 설정파일의 경로 관리하기?
-
         String path = url.getPath();
         File f = new File(path);
 

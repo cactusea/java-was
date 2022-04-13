@@ -3,7 +3,7 @@
   "servers": [
     {
       "server_name": "www.was1.com",
-      "http_root": "/template/was1",
+      "http_root": "template/was1",
       "page_index": "/index.html",
       "page403": "/403.html",
       "page404": "/404.html",
@@ -11,7 +11,7 @@
     },
     {
       "server_name": "www.was2.com",
-      "http_root": "/template/was2",
+      "http_root": "template/was2",
       "page_index": "/index.html",
       "page403": "/403.html",
       "page404": "/404.html",
@@ -20,7 +20,6 @@
   ],
   "forbidden_type": [
       "exe",
-      "sh",
       "/.."
     ],
   "mapper" : {
