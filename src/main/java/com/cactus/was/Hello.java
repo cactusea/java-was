@@ -11,10 +11,12 @@ import java.io.Writer;
 
 public class Hello implements SimpleServlet {
 
-    private static Logger logger = LoggerFactory.getLogger(com.cactus.was.service.Hello.class);
+    private static Logger logger = LoggerFactory.getLogger(Hello.class);
 
     @Override
     public void service(HttpRequest req, HttpResponse res) throws IOException {
+        logger.debug("Hello");
+
         Writer writer = res.getWriter();
         writer.write("Hello,");
         String name = req.getParameter("name");

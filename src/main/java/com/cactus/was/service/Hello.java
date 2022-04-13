@@ -15,6 +15,8 @@ public class Hello implements SimpleServlet {
 
     @Override
     public void service(HttpRequest req, HttpResponse res) throws IOException {
+        logger.debug("service.Hello");
+
         Writer writer = res.getWriter();
         writer.write("Hello, ");
         String name = req.getParameter("name");
