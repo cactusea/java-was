@@ -21,7 +21,7 @@ public class HttpRequest {
     //파일 경로
     public String filePath;
     //
-    public String name;
+//    public String name;
     //host별 정보
     public Configuration.Servers serverConfig;
     //접근금지
@@ -45,6 +45,7 @@ public class HttpRequest {
             String reqStr = reqMsg.toString();
             String[] reqMsgHeader = reqStr.split("\r\n");
             Header header = new Header(reqMsgHeader);
+            setHeader(header);
             setParamMap(header.getParams());
 
             //현재 host 정보를 가져온다
@@ -75,8 +76,6 @@ public class HttpRequest {
                     filePath = mapperMap.get(fileName);
                 }
             }
-            
-            setName(fileName);
             setFileName(fileName);
             setFilePath(filePath);
             setForbiddenType(config.getForbidden_type());
@@ -90,12 +89,10 @@ public class HttpRequest {
         }
     }
 
-
-    public String getParameter(String name) {
-        String param = getParamMap().get(name);
+    public String getParameter(String key) {
+        String param = getParamMap().get(key);
         return param;
     }
-
 
     public Header getHeader() {
         return header;
@@ -111,14 +108,6 @@ public class HttpRequest {
 
     public void setFileName(String fileName) {
         this.fileName = fileName;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
     }
 
     public Configuration.Servers getServerConfig() {
