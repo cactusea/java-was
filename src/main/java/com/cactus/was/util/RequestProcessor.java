@@ -1,6 +1,5 @@
 package com.cactus.was.util;
 
-import com.cactus.was.config.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -48,31 +47,34 @@ public class RequestProcessor implements Runnable {
 //            res = new HttpResponse(ous);
 
             req.setting();
-            String fileName = req.getFileName();
-            logger.debug(req.getRhost());
-            logger.debug(req.getRdest());
+            //String fileName = req.getFileName();
+            String filePath = req.getFilePath();
+            logger.debug("filepath::{}",req.getFilePath());
 
-            if(fileName==null){
+            if(filePath==null){
                 //todo 404 exception 처리
                 throw new FileNotFoundException();
-            }else if("403".equals(fileName)){ //todo 임시처리~~
+            }else if("403".equals(filePath)){ //todo 임시처리~~
                 //todo 403 forbidden
-//                throw new ErrorHandler("403 Forbidden");
+                //throw new ErrorHandler("403 Forbidden");
             }
 
-            if (fileName.endsWith("/")) fileName += ""; //todo root일경우 ..default?
             //경로처리
             //루트 아니고 경로 파일일 경우에도 처리..
-            File file = new File(fileName);
+            File file = new File(filePath);
 
-            String contentType = URLConnection.getFileNameMap().getContentTypeFor(fileName);
+            String contentType = URLConnection.getFileNameMap().getContentTypeFor(filePath);
 
-            // 파일읽어오기
-            ClassLoader loader = Thread.currentThread().getContextClassLoader();
-            URL url = loader.getResource("template/was1/index.html"); //todo 대상 파일 적용.. 라우팅 결과물을 가져와서 넣어야한다. ??
-
-            String path = url.getPath();
+            String path = filePath;
             File theFile = new File(path);
+
+            if(path.endsWith("html")){
+//                page로 이동
+                //file canread로 확인 후 리턴
+
+            } else {
+                doAction();
+            }
 
             if (theFile.canRead()) {
                 byte[] theData = Files.readAllBytes(theFile.toPath());
@@ -80,13 +82,16 @@ public class RequestProcessor implements Runnable {
                 // so use the underlying output stream
                 // instead of the writer
                 //todo 흠 헤더... 헤더를 어떻게 보낼까
-                sendHeader(out, "HTTP/1.0 200 OK", contentType, theData.length);
+                //이거 flush에ㅔ서 소켓익셉션이..
+//                sendHeader(out, "HTTP/1.0 200 OK", contentType, theData.length);
 
                 ous.write(theData);
                 ous.flush();
             } else {
-                url = loader.getResource("template/was1/404.html");
-                logger.error("file cannot read");
+//                logger.info(filePath);
+
+//                url = loader.getResource("template/was1/404.html");
+//                logger.error("file cannot read");
             }
 
         } catch (FileNotFoundException e){
@@ -116,13 +121,14 @@ public class RequestProcessor implements Runnable {
         Method method = null; //무순메소드?
 
         try {
-            servletClass = Class.forName("");
+            servletClass = Class.forName("com.cactus.was."+"Hello");
+            method = servletClass.getMethod("service",new Class[] {HttpRequest.class, HttpResponse.class} );
 //            servletClass = Class.forName(controllerPackage + "." + WordUtils.capitalize(path[1]) );
 //            method = servletClass.getMethod(path[2], new Class[] {HttpServletRequest.class, HttpServletResponse.class});
         } catch (ClassNotFoundException e) {
             e.printStackTrace();
-//        } catch (NoSuchMethodException e) {
-//            e.printStackTrace();
+        } catch (NoSuchMethodException e) {
+            e.printStackTrace();
         } catch (SecurityException e) {
             e.printStackTrace();
         }
@@ -131,11 +137,8 @@ public class RequestProcessor implements Runnable {
 
         try {
             simpleServlet = servletClass.newInstance(); //todo jdk9 newinstance deprecated
-            servletClass.getDeclaredConstructor().newInstance();  // replace?
+//            servletClass.getDeclaredConstructor().newInstance();  // replace?
             method.invoke(simpleServlet, req, res);
-            //혹은
-            //simpleServlet.service(req, res) 이렇게 직접 호출해도 되는듯?
-            //확장성을 고려하면 method.invoke가 안정적일듯..?
         } catch (Exception e) {
             e.printStackTrace();
         }

@@ -30,6 +30,7 @@ public class HttpRequest {
     public Map<String, String> params = new HashMap<>();
     public String rhost;
     public String rdest;
+    public String filePath;
 
 //    private String requestURL; //http://localhost/Project/project.jsp
 //    private String requestURI; ///Project/project.jsp
@@ -58,29 +59,46 @@ public class HttpRequest {
             //filename 리턴해주는 방법
             //현재 host 정보를 가져온다
             String host = header.getHost(); //www.was1.com
-            String dest = header.getReqUrl(); //hello //todo mapper에서 매칭
-
-            // ex 1) was1.com/
-            // ex 2) was1.com/Hello
-            // ex 3) was1.com/service.Hello
+            String dest = header.getReqUrl(); //hello //todo mapper에서 매핑
 
             //application.json에서 host값에 매핑된 목적지파일 주소를 가져온다
             List<Configuration.Servers> serverList = config.getServers();
 
-            String rhost = "";
+            String rhost = host; //매핑된 host 주소값의 http_root 경로
+            String rindex = "/"; //매핑된 host 주소값에서 사용하는 index page
             for (Configuration.Servers server : serverList) {
                 if (server.getServer_name().equals(host)) {
                     rhost = server.getHttp_root();
+                    rindex = server.getPage_index();
                     break;
                 }
             }
             Map<String, String> mapperMap = config.getMapper();
-            String rdest = mapperMap.get(dest);
-            logger.info("rhost :: {}", rhost);
-            logger.info("rdest :: {}", rdest);
-            setRdest(rdest);
-            setRhost(rhost);
+            // ex 1) was1.com       /
+            // ex 2) was1.com       /Hello
+            // ex 3) was1.com       /service.Hello
 
+            String filePath="";
+            if (dest.endsWith("/")) { //page
+                filePath = rhost + rindex;
+            } else { //class
+                //요청 리퀘스트와 매핑되는 클래스 주소가 있는지 확인한다.
+                if(mapperMap.get(dest)!=null){
+                    //무언가의 처리..?
+                    filePath = mapperMap.get(dest); //todo 이쁘게~
+                }
+            }
+//            file = roothpath + http_root + filepath;
+
+            setFilePath(filePath);
+
+//
+//            String rdest = mapperMap.get(dest);
+//            //여기서 mapping되는 키가 없으면 null이 됨..!
+//            logger.info("rhost :: {}", rhost);
+////            logger.info("rdest :: {}", rdest);
+//            setRhost(rhost);
+//            setRdest(rdest);
 
         } catch (UnsupportedEncodingException e) {
             e.printStackTrace();
@@ -139,5 +157,13 @@ public class HttpRequest {
 
     public void setRdest(String rdest) {
         this.rdest = rdest;
+    }
+
+    public String getFilePath() {
+        return filePath;
+    }
+
+    public void setFilePath(String filePath) {
+        this.filePath = filePath;
     }
 }
