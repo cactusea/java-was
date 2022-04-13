@@ -18,9 +18,9 @@ public class Hello implements SimpleServlet {
         logger.info("Hello~~?");
         Writer writer = res.getWriter();
         writer.write("Hello, ");
-        writer.write("write test.., ");
-
-//        writer.write(req.getParameter("name"));
+        String reqname = req.getParams().get("name"); //test..
+        writer.write(reqname);
+        logger.info("name::{}",reqname);
     }
 
 }

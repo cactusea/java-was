@@ -44,7 +44,7 @@ public class RequestProcessor implements Runnable {
             Writer out = new OutputStreamWriter(raw);
 
             req = new HttpRequest(ins);
-//            res = new HttpResponse(ous);
+            res = new HttpResponse(ous);
 
             req.setting();
             //String fileName = req.getFileName();
@@ -122,7 +122,7 @@ public class RequestProcessor implements Runnable {
 
         try {
             servletClass = Class.forName("com.cactus.was."+"Hello");
-            method = servletClass.getMethod("service",new Class[] {HttpRequest.class, HttpResponse.class} );
+            method = servletClass.getMethod("service", new Class[] {HttpRequest.class, HttpResponse.class} );
 //            servletClass = Class.forName(controllerPackage + "." + WordUtils.capitalize(path[1]) );
 //            method = servletClass.getMethod(path[2], new Class[] {HttpServletRequest.class, HttpServletResponse.class});
         } catch (ClassNotFoundException e) {
@@ -139,6 +139,7 @@ public class RequestProcessor implements Runnable {
             simpleServlet = servletClass.newInstance(); //todo jdk9 newinstance deprecated
 //            servletClass.getDeclaredConstructor().newInstance();  // replace?
             method.invoke(simpleServlet, req, res);
+
         } catch (Exception e) {
             e.printStackTrace();
         }
