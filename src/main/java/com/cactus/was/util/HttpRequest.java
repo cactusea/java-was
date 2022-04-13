@@ -1,7 +1,6 @@
 package com.cactus.was.util;
 
 import com.cactus.was.config.Configuration;
-//import com.cactus.was.config.ServerSetting;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -10,42 +9,34 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * HTTP 요청 정보(클라이언트 요청, 쿠키, 세션 등)를 제공하는 인터페이스
- * HTTP 프로토콜의 request 정보를 서블릿에게 전달하기 위한 목적으로 사용한다.
- * Message Body의 Stream을 읽어들이는 메서드를 가지고 있다.
- *
- * ex)
- * 메서드 예시
- * getParameterNames() : 현재 요청에 포함된 매개변수 이름을 열거 형태로 넘겨준다.
- * getParameter(name) : 문자열 name과 같은 이름의 매개변수를 가져온다.
- */
 public class HttpRequest {
 
     private static Logger logger = LoggerFactory.getLogger(HttpRequest.class);
 
     private InputStream ins;
+    //헤더정보
     private Header header;
-    public String fileName; //todo 아 이거 목적지 파일 이름이었어^^;;; 헷가렬서 이름 바꿔야겠
-    public Map<String, String> params = new HashMap<>();
-    public String rhost;
-    public String rdest;
+    //요청받은 파일
+    public String fileName;
+    //파일 경로
     public String filePath;
-
-//    private String requestURL; //http://localhost/Project/project.jsp
-//    private String requestURI; ///Project/project.jsp
-//    private String remoteHost; //127.0.0.1
-//    private String sererName;  //localhost
-//    private int serverPort;    //8000
+    //
+    public String name;
+    //host별 정보
+    public Configuration.Servers serverConfig;
+    //접근금지
+    public String[] forbiddenType;
+    //파라미터
+    public Map<String, String> paramMap = new HashMap<>();
 
     public HttpRequest(InputStream ins) {
         this.ins = ins;
     }
 
     public void setting(){
-        try(BufferedReader br = new BufferedReader(new InputStreamReader(new BufferedInputStream(this.ins), "UTF-8"))){
+        try{
+            BufferedReader br = new BufferedReader(new InputStreamReader(new BufferedInputStream(this.ins), "UTF-8"));
             StringBuilder reqMsg = new StringBuilder();
-
             while(br.ready()){
                 reqMsg.append(br.readLine()).append("\r\n");
             }
@@ -54,58 +45,57 @@ public class HttpRequest {
             String reqStr = reqMsg.toString();
             String[] reqMsgHeader = reqStr.split("\r\n");
             Header header = new Header(reqMsgHeader);
-            setParameter(header.getParams());
+            setParamMap(header.getParams());
 
-            //filename 리턴해주는 방법
             //현재 host 정보를 가져온다
-            String host = header.getHost(); //www.was1.com
-            String dest = header.getReqUrl(); //hello //todo mapper에서 매핑
+            String host = header.getHost();
+            String fileName = header.getReqUrl();
 
+            //todo processor에서 처리..?
             //application.json에서 host값에 매핑된 목적지파일 주소를 가져온다
             List<Configuration.Servers> serverList = config.getServers();
 
             String rhost = host; //매핑된 host 주소값의 http_root 경로
-            String rindex = "/"; //매핑된 host 주소값에서 사용하는 index page
+            String rindex = "/"; //mapper에서 매핑된 정보값 사용
             for (Configuration.Servers server : serverList) {
                 if (server.getServer_name().equals(host)) {
                     rhost = server.getHttp_root();
                     rindex = server.getPage_index();
+                    setServerConfig(server);
                     break;
                 }
             }
             Map<String, String> mapperMap = config.getMapper();
-            // ex 1) was1.com       /
-            // ex 2) was1.com       /Hello
-            // ex 3) was1.com       /service.Hello
 
             String filePath="";
-            if (dest.endsWith("/")) { //page
+            if (fileName.endsWith("/")) {
                 filePath = rhost + rindex;
-            } else { //class
-                //요청 리퀘스트와 매핑되는 클래스 주소가 있는지 확인한다.
-                if(mapperMap.get(dest)!=null){
-                    //무언가의 처리..?
-                    filePath = mapperMap.get(dest); //todo 이쁘게~
+            } else {
+                if(mapperMap.get(fileName)!=null){
+                    filePath = mapperMap.get(fileName);
                 }
             }
-//            file = roothpath + http_root + filepath;
-
+            
+            setName(fileName);
+            setFileName(fileName);
             setFilePath(filePath);
-
-//
-//            String rdest = mapperMap.get(dest);
-//            //여기서 mapping되는 키가 없으면 null이 됨..!
-//            logger.info("rhost :: {}", rhost);
-////            logger.info("rdest :: {}", rdest);
-//            setRhost(rhost);
-//            setRdest(rdest);
+            setForbiddenType(config.getForbidden_type());
 
         } catch (UnsupportedEncodingException e) {
+            logger.error("UnsupportedEncodingException");
             e.printStackTrace();
         } catch (IOException e) {
+            logger.error("IOException");
             e.printStackTrace();
         }
     }
+
+
+    public String getParameter(String name) {
+        String param = getParamMap().get(name);
+        return param;
+    }
+
 
     public Header getHeader() {
         return header;
@@ -123,40 +113,20 @@ public class HttpRequest {
         this.fileName = fileName;
     }
 
-    public String getParameter(String name) {
-        if(this.params.size()>0){
-
-        }
-        String param = this.params.get(name);
-        return param;
+    public String getName() {
+        return name;
     }
 
-    public void setParameter(Map<String, String> params) {
-        this.params = params;
+    public void setName(String name) {
+        this.name = name;
     }
 
-    public Map<String, String> getParams() {
-        return params;
+    public Configuration.Servers getServerConfig() {
+        return serverConfig;
     }
 
-    public void setParams(Map<String, String> params) {
-        this.params = params;
-    }
-
-    public String getRhost() {
-        return rhost;
-    }
-
-    public void setRhost(String rhost) {
-        this.rhost = rhost;
-    }
-
-    public String getRdest() {
-        return rdest;
-    }
-
-    public void setRdest(String rdest) {
-        this.rdest = rdest;
+    public void setServerConfig(Configuration.Servers serverConfig) {
+        this.serverConfig = serverConfig;
     }
 
     public String getFilePath() {
@@ -165,5 +135,21 @@ public class HttpRequest {
 
     public void setFilePath(String filePath) {
         this.filePath = filePath;
+    }
+
+    public Map<String, String> getParamMap() {
+        return paramMap;
+    }
+
+    public void setParamMap(Map<String, String> paramMap) {
+        this.paramMap = paramMap;
+    }
+
+    public String[] getForbiddenType() {
+        return forbiddenType;
+    }
+
+    public void setForbiddenType(String[] forbiddenType) {
+        this.forbiddenType = forbiddenType;
     }
 }
