@@ -46,13 +46,12 @@ public class RequestProcessor implements Runnable {
         Writer out = new OutputStreamWriter(raw);
 
         try {
-
             req.setting();
 
             String fileName = req.getFileName();
             String filePath = req.getFilePath();
             logger.debug("fileName::{}, filepath::{}", fileName, filePath);
-//
+
             ClassLoader loader = Thread.currentThread().getContextClassLoader();
 
             //..todo ... 빼고싶당
@@ -73,9 +72,6 @@ public class RequestProcessor implements Runnable {
                     }
                 }
             }
-            //500
-            //기타오류나..
-            //타임아웃?..
 
             URL url = loader.getResource(filePath);
             if(url!=null){
@@ -96,7 +92,7 @@ public class RequestProcessor implements Runnable {
         } catch (FileNotFoundException e){
             logger.error("FileNotFoundException");
             e.printStackTrace();
-            //.....으으으음........ loader때문에......으으으으믐ㅇㄴ름ㄴㅇ루ㅡ
+
         } catch (IOException ex) {
             logger.error("Error talking to " + connection.getRemoteSocketAddress(), ex);
         } catch(Exception e){
@@ -132,8 +128,7 @@ public class RequestProcessor implements Runnable {
         Object simpleServlet = null;
 
         try {
-//            simpleServlet = servletClass.newInstance(); //todo jdk9 newinstance deprecated
-            simpleServlet = servletClass.getDeclaredConstructor().newInstance();  // replace
+            simpleServlet = servletClass.getDeclaredConstructor().newInstance();
             method.invoke(simpleServlet, req, res);
             res.sendHeader(req.getHeader().getVersion()+" 200 OK", "text/html", 0);
             //...?todo 왜 에러가...
