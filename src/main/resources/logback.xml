@@ -9,7 +9,8 @@
         <!-- Support multiple-JVM writing to the same log file -->
         <prudent>true</prudent>
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-            <fileNamePattern>/log/logback.%d{yyyyMMddHH}.log</fileNamePattern>
+            <fileNamePattern>./log/logback.%d{yyyyMMdd}.log</fileNamePattern>
+<!--            todo 경로 ㅠ -->
         </rollingPolicy>
         <encoder>
             <pattern>[%d{yyyy-MM-dd HH:mm:ss}] [%-5p] %C{1}.%M[%L] %m%n</pattern>
@@ -20,8 +21,8 @@
         <appender-ref ref="console" />
     </logger>
 
-<!--    <root level="DEBUG">-->
-    <root level="INFO">
+    <root level="DEBUG">
+<!--    <root level="INFO">-->
         <appender-ref ref="FILE"/>
         <appender-ref ref="console"/>
     </root>
