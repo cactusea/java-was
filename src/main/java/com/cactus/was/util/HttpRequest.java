@@ -70,12 +70,11 @@ public class HttpRequest {
 
             String filePath="";
             if (fileName.endsWith("/")) {
-                filePath = rhost + rindex;
-            } else {
-                if(mapperMap.get(fileName)!=null){
-                    filePath = mapperMap.get(fileName);
-                }
+                filePath = rhost + fileName + rindex;
+            } else if(mapperMap.get(fileName)!=null){
+                filePath = mapperMap.get(fileName);
             }
+
             setFileName(fileName);
             setFilePath(filePath);
             setForbiddenType(config.getForbidden_type());

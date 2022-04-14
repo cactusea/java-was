@@ -16,6 +16,8 @@ public class RequestProcessor implements Runnable {
     private final static String[] EXTENTION = {"html","txt"};
     private Socket connection;
     private Writer out;
+    private OutputStream raw;
+    private ClassLoader loader = Thread.currentThread().getContextClassLoader();
 
     public RequestProcessor(Socket connection){
         this.connection = connection;
@@ -43,7 +45,7 @@ public class RequestProcessor implements Runnable {
         HttpRequest req = new HttpRequest(ins);
         HttpResponse res = new HttpResponse(ous);
 
-        OutputStream raw = new BufferedOutputStream(ous);
+        raw = new BufferedOutputStream(ous);
         out = new OutputStreamWriter(raw);
 
         try {
@@ -53,24 +55,12 @@ public class RequestProcessor implements Runnable {
             String filePath = req.getFilePath();
             logger.debug("fileName::{}, filepath::{}", fileName, filePath);
 
-            ClassLoader loader = Thread.currentThread().getContextClassLoader();
-
-            //..todo ... 빼고싶당
             //보안규칙에 위배되는 경우 403 반환
             for(String ft : req.getForbiddenType()){
                 if(fileName.endsWith("."+ft) || fileName.contains(ft)){
-                    logger.info("forbidden type, access denied");
-                    String page = loader.getResource(req.getServerConfig().getHttp_root()
-                            +req.getServerConfig().getPage403()).getPath();
-                    File theFile = new File(page);
-
-                    if (theFile.canRead()) {
-                        byte[] theData = Files.readAllBytes(theFile.toPath());
-                        res.sendHeader(out, req.getHeader().getVersion()+" 403 Forbidden", "text/html", theData.length);
-                        raw.write(theData);
-                        raw.flush();
-                        throw new Exception("access denied Exception");
-                    }
+                    logger.warn("forbidden type, access denied");
+                    callExceptionPage(req, res, "403");
+                    throw new Exception("access denied Exception");
                 }
             }
 
@@ -89,31 +79,17 @@ public class RequestProcessor implements Runnable {
                 doAction(req, res);
             }
 
-
         } catch (FileNotFoundException e){
             logger.error("FileNotFoundException");
             e.printStackTrace();
-
+            callExceptionPage(req, res, "404");
         } catch (IOException ex) {
             logger.error("Error talking to " + connection.getRemoteSocketAddress(), ex);
+            callExceptionPage(req, res, "500");
         } catch(Exception e){
             logger.error("server Exception");
             e.printStackTrace();
-
-            String body = new StringBuilder("<HTML>\r\n")
-                    .append("<HEAD><TITLE>Internal Server Error</TITLE>\r\n").append("</HEAD>\r\n")
-                    .append("<BODY>")
-                    .append("<H1>500 Internal Server Error</H1>\r\n")
-                    .append("</BODY></HTML>\r\n").toString();
-            try {
-                res.sendHeader(out, req.getHeader().getVersion() + " 500 Internal Server Error",
-                        "text/html; charset=utf-8", body.length());
-                out.write(body);
-                out.flush();
-            }catch (IOException ioe){
-                logger.error("Internal Server Error response :: IOExcption");
-                ioe.printStackTrace();
-            }
+            callExceptionPage(req, res, "500");
         }finally {
             try {
                 connection.close();
@@ -129,42 +105,75 @@ public class RequestProcessor implements Runnable {
         Method method = null;
 
         try {
-            //todo package ...
-            servletClass = Class.forName("com.cactus.was."+"Hello");
-//            servletClass = Class.forName("com.cactus.was.service."+"Hello");
+            //todo package를 classloader로 가져오는 방법은 없을까 ~
+            servletClass = Class.forName("com.cactus.was."+req.getFilePath());
             method = servletClass.getMethod("service", new Class[] {HttpRequest.class, HttpResponse.class} );
         } catch (ClassNotFoundException e) {
+            logger.error("ClassNotFoundException");
             e.printStackTrace();
         } catch (NoSuchMethodException e) {
+            logger.error("NoSuchMethodException");
             e.printStackTrace();
         } catch (SecurityException e) {
+            logger.error("SecurityException");
             e.printStackTrace();
         }
 
         Object simpleServlet = null;
-
         try {
             simpleServlet = servletClass.getDeclaredConstructor().newInstance();
-            method.invoke(simpleServlet, req, res);
+            method.invoke(simpleServlet, req, res); //todo  리턴?
             res.sendHeader(out, req.getHeader().getVersion()+" 200 OK", "text/html", 0);
         } catch (Exception e) {
             e.printStackTrace();
-            String body = new StringBuilder("<HTML>\r\n")
-                    .append("<HEAD><TITLE>Internal Server Error</TITLE>\r\n").append("</HEAD>\r\n")
-                    .append("<BODY>")
-                    .append("<H1>500 Internal Server Error</H1>\r\n")
-                    .append("</BODY></HTML>\r\n").toString();
-            try {
-                res.sendHeader(out, req.getHeader().getVersion() + " 500 Internal Server Error",
-                        "text/html; charset=utf-8", body.length());
-                out.write(body);
-                out.flush();
-            }catch (IOException ioe){
-                logger.error("Internal Server Error response :: IOExcption");
-                ioe.printStackTrace();
+            callExceptionPage(req, res, "500");
+        }
+
+    }
+
+    /**
+     * 각 host의 http status 응답 페이지 리턴
+     *
+     * @param req
+     * @param res
+     * @param statusCode
+     */
+    public void callExceptionPage(HttpRequest req, HttpResponse res, String statusCode){
+        String statusMsg = ""; //todo enum으로 관리해도 좋을 듯
+        String page = req.getServerConfig().getHttp_root();
+        switch (statusCode){
+            case "403": {
+                page += req.getServerConfig().getPage403();
+                statusMsg = " 403 Forbidden";
+                break;
+            }
+            case "404": {
+                page += req.getServerConfig().getPage404();
+                statusMsg = " 404 Not Found";
+                break;
+            }
+            case "500": {
+                page += req.getServerConfig().getPage500();
+                statusMsg = " 500 Internal Server Error";
+                break;
+            } default: {
+                page += req.getServerConfig().getPage_index();
             }
         }
 
+        page = loader.getResource(page).getPath();
+        File tFile = new File(page);
+        try {
+            if (tFile.canRead()) {
+                byte[] theData = Files.readAllBytes(new File(page).toPath());
+                res.sendHeader(out, req.getHeader().getVersion()+statusMsg, "text/html", theData.length);
+                raw.write(theData);
+                raw.flush();
+            }
+        }catch (IOException ioe){
+            logger.error("Server Error response :: IOException");
+            ioe.printStackTrace();
+        }
     }
 
 

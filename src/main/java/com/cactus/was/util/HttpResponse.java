@@ -42,9 +42,4 @@ public class HttpResponse {
         return out;
     }
 
-    //todo 주석으로 테스트
-    public void write(String data) throws IOException {
-        out.write(data);
-        out.flush();
-    }
 }
