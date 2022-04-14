@@ -52,7 +52,6 @@ public class HttpRequest {
             String host = header.getHost();
             String fileName = header.getReqUrl();
 
-            //todo processor에서 처리..?
             //application.json에서 host값에 매핑된 목적지파일 주소를 가져온다
             List<Configuration.Servers> serverList = config.getServers();
 
