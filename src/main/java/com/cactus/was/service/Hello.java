@@ -23,7 +23,6 @@ public class Hello implements SimpleServlet {
         if(name!=null){
             writer.write(name);
         }
-//        writer.flush();
     }
 
 }

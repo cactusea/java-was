@@ -39,6 +39,7 @@ public class HttpServer {
             logger.info("Accepting connections on port :: {}", server.getLocalPort());
             while (true) {
                 try {
+                    server.setSoTimeout(5000);
                     Socket request = server.accept();
                     Runnable r = new RequestProcessor(request);
                     pool.submit(r);

@@ -15,6 +15,7 @@ public class RequestProcessor implements Runnable {
     private static Logger logger = LoggerFactory.getLogger(RequestProcessor.class);
     private final static String[] EXTENTION = {"html","txt"};
     private Socket connection;
+    private Writer out;
 
     public RequestProcessor(Socket connection){
         this.connection = connection;
@@ -43,7 +44,7 @@ public class RequestProcessor implements Runnable {
         HttpResponse res = new HttpResponse(ous);
 
         OutputStream raw = new BufferedOutputStream(ous);
-        Writer out = new OutputStreamWriter(raw);
+        out = new OutputStreamWriter(raw);
 
         try {
             req.setting();
@@ -98,6 +99,21 @@ public class RequestProcessor implements Runnable {
         } catch(Exception e){
             logger.error("server Exception");
             e.printStackTrace();
+
+            String body = new StringBuilder("<HTML>\r\n")
+                    .append("<HEAD><TITLE>Internal Server Error</TITLE>\r\n").append("</HEAD>\r\n")
+                    .append("<BODY>")
+                    .append("<H1>500 Internal Server Error</H1>\r\n")
+                    .append("</BODY></HTML>\r\n").toString();
+            try {
+                res.sendHeader(out, req.getHeader().getVersion() + " 500 Internal Server Error",
+                        "text/html; charset=utf-8", body.length());
+                out.write(body);
+                out.flush();
+            }catch (IOException ioe){
+                logger.error("Internal Server Error response :: IOExcption");
+                ioe.printStackTrace();
+            }
         }finally {
             try {
                 connection.close();
@@ -130,10 +146,23 @@ public class RequestProcessor implements Runnable {
         try {
             simpleServlet = servletClass.getDeclaredConstructor().newInstance();
             method.invoke(simpleServlet, req, res);
-            res.sendHeader(req.getHeader().getVersion()+" 200 OK", "text/html", 0);
-            //...?todo 왜 에러가...
+            res.sendHeader(out, req.getHeader().getVersion()+" 200 OK", "text/html", 0);
         } catch (Exception e) {
             e.printStackTrace();
+            String body = new StringBuilder("<HTML>\r\n")
+                    .append("<HEAD><TITLE>Internal Server Error</TITLE>\r\n").append("</HEAD>\r\n")
+                    .append("<BODY>")
+                    .append("<H1>500 Internal Server Error</H1>\r\n")
+                    .append("</BODY></HTML>\r\n").toString();
+            try {
+                res.sendHeader(out, req.getHeader().getVersion() + " 500 Internal Server Error",
+                        "text/html; charset=utf-8", body.length());
+                out.write(body);
+                out.flush();
+            }catch (IOException ioe){
+                logger.error("Internal Server Error response :: IOExcption");
+                ioe.printStackTrace();
+            }
         }
 
     }

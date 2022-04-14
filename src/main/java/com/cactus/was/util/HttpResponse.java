@@ -27,8 +27,7 @@ public class HttpResponse {
      * @param length
      * @throws IOException
      */
-    public void sendHeader(Writer out, String responseCode, String contentType, int length)
-            throws IOException {
+    public void sendHeader(Writer out, String responseCode, String contentType, int length)  throws IOException {
         out.write(responseCode + "\r\n");
         Date now = new Date();
         out.write("Date: " + now + "\r\n");
@@ -43,20 +42,9 @@ public class HttpResponse {
         return out;
     }
 
+    //todo 주석으로 테스트
     public void write(String data) throws IOException {
         out.write(data);
         out.flush();
     }
-
-    public void sendHeader(String responseCode, String contentType, int length)
-            throws IOException {
-        out.write(responseCode + "\r\n");
-        Date now = new Date();
-        out.write("Date: " + now + "\r\n");
-        out.write("Server: JHTTP 2.0\r\n");
-        out.write("Content-length: " + length + "\r\n");
-        out.write("Content-type: " + contentType + "\r\n\r\n");
-        out.flush();
-    }
-
 }
