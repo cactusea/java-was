@@ -1,13 +1,12 @@
-package com.cactus.was.service;
+package com.cactus.was.servlet.service;
 
 import com.cactus.was.util.HttpRequest;
 import com.cactus.was.util.HttpResponse;
-import com.cactus.was.util.SimpleServlet;
+import com.cactus.was.servlet.SimpleServlet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.io.Writer;
+import java.io.*;
 
 public class Hello implements SimpleServlet {
 
@@ -21,6 +20,7 @@ public class Hello implements SimpleServlet {
         writer.write("Hello, ");
         String name = req.getParameter("name");
         if(name!=null){
+            logger.debug(name);
             writer.write(name);
         }
     }

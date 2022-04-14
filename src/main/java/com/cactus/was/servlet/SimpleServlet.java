@@ -1,4 +1,7 @@
-package com.cactus.was.util;
+package com.cactus.was.servlet;
+
+import com.cactus.was.util.HttpRequest;
+import com.cactus.was.util.HttpResponse;
 
 import java.io.IOException;
 

@@ -13,11 +13,16 @@ import java.nio.file.Files;
 public class RequestProcessor implements Runnable {
 
     private static Logger logger = LoggerFactory.getLogger(RequestProcessor.class);
-    private final static String[] EXTENTION = {"html","txt"};
-    private Socket connection;
-    private Writer out;
-    private OutputStream raw;
     private ClassLoader loader = Thread.currentThread().getContextClassLoader();
+    private Socket connection;
+    private OutputStream raw;
+    private Writer out;
+
+    InputStream ins=null;
+    OutputStream ous=null;
+
+    HttpRequest req;
+    HttpResponse res;
 
     public RequestProcessor(Socket connection){
         this.connection = connection;
@@ -33,8 +38,7 @@ public class RequestProcessor implements Runnable {
      */
     @Override
     public void run(){
-        InputStream ins=null;
-        OutputStream ous=null;
+
         try{
             ins = connection.getInputStream();
             ous = connection.getOutputStream();
@@ -42,9 +46,8 @@ public class RequestProcessor implements Runnable {
             logger.error("connectoin steream error :: {}", e);
         }
 
-        HttpRequest req = new HttpRequest(ins);
-        HttpResponse res = new HttpResponse(ous);
-
+        req = new HttpRequest(ins);
+        res = new HttpResponse(ous);
         raw = new BufferedOutputStream(ous);
         out = new OutputStreamWriter(raw);
 
@@ -65,7 +68,7 @@ public class RequestProcessor implements Runnable {
             }
 
             URL url = loader.getResource(filePath);
-            if(url!=null){
+            if(url!=null && !filePath.equals("")){
                 File theFile = new File(url.getPath());
                 if (theFile.canRead()) {
                     byte[] theData = Files.readAllBytes(theFile.toPath());
@@ -105,8 +108,7 @@ public class RequestProcessor implements Runnable {
         Method method = null;
 
         try {
-            //todo package를 classloader로 가져오는 방법은 없을까 ~
-            servletClass = Class.forName("com.cactus.was."+req.getFilePath());
+            servletClass = Class.forName("com.cactus.was.servlet."+req.getFilePath());
             method = servletClass.getMethod("service", new Class[] {HttpRequest.class, HttpResponse.class} );
         } catch (ClassNotFoundException e) {
             logger.error("ClassNotFoundException");
@@ -122,8 +124,9 @@ public class RequestProcessor implements Runnable {
         Object simpleServlet = null;
         try {
             simpleServlet = servletClass.getDeclaredConstructor().newInstance();
-            method.invoke(simpleServlet, req, res); //todo  리턴?
             res.sendHeader(out, req.getHeader().getVersion()+" 200 OK", "text/html", 0);
+            method.invoke(simpleServlet, req, res);
+
         } catch (Exception e) {
             e.printStackTrace();
             callExceptionPage(req, res, "500");

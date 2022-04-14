@@ -34,11 +34,14 @@ public class HttpResponse {
         out.write("Server: JHTTP 2.0\r\n");
         out.write("Content-length: " + length + "\r\n");
         out.write("Content-type: " + contentType + "\r\n\r\n");
+        this.out = out;
         out.flush();
     }
 
     public Writer getWriter(){
-        out = new OutputStreamWriter(ous);
+        if(out==null){
+            out = new OutputStreamWriter(ous);
+        }
         return out;
     }
 

@@ -50,6 +50,7 @@ public class Header {
                     .collect(Collectors.toMap(k->k[0], v->v[1]));
 
             setParams(paramMap);
+            reqUrl = param[0];
         }
 
         //setter
